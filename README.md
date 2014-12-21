@@ -1,280 +1,319 @@
 docker-informix
-===============
+===================
 
-Docker container for IBM Informix Dynamic Server.
+Debian/Ubuntu based docker container with IBM Informix Dynamic Server.
 
-Recently IBM announced developement platform called [Bluemix](http://bluemix.net/). 
-The idea is that you get to develop applications in the cloud using IBM and third party-provided Cloud hosted components. 
-It's a PaaS, much like Red Hat OpenShift and Heroku. 
-On Bluemix Informix is missing (there is PostgreSQL, MySQL, MongoDB) so I have created the Docker 
-file which creates Docker container with Informix ready to be installed on other Cloud Providers 
-(Rackspace, Yandex, Google Cloud Platform).
+The Informix Database Server is offered in a number of editions, including free developer editions, editions for small and mid-sized business, 
+and editions supporting the complete feature set and designed to be used in support of the largest enterprise applications. 
+If you are confused which version of Inforix choose use [Informix feature description](http://www.ibm.com/developerworks/data/library/techarticle/dm-0801doe/index.html#table).
 
-usage
-----------
+Informix is generally considered to be optimized for environments with very low or no database administration, 
+including use as an embedded database. It has a long track record of supporting very high transaction rates 
+and providing uptime characteristics needed for mission critical applications such as manufacturing lines 
+and reservation systems. Informix has been widely deployed in the retail sector, where the low administration 
+overhead makes it useful for in-store deployments.
 
+To use this project you have to [download Informix installation files from IBM Informix Download page](http://www-01.ibm.com/software/data/informix/downloads.html) on your own (registration required).
+
+Recently IBM announced cloud platform called [Bluemix](http://bluemix.net/). 
+There is no Informix Database Software on IBM Bluemix (there is PostgreSQL, MySQL, MongoDB) 
+so I have created this small project to create Docker container with Informix. 
+
+I am not sure that this container is production ready - I am using it for developement and testing.
+
+
+Building Informix container image (Ubuntu host)
+---------------------------------------------
 
 ```bash
-## Install Docker and clone this repository
+## Remove standard Ubuntu Docker installation and install most recent Docker
+sudo apt-get purge docker.io
 curl -s https://get.docker.io/ubuntu/ | sudo sh
+
+## Create enviroment for docker-informix container build
+mkdir informix_build
+cd informix_build
 git clone https://github.com/0x1fff/docker-informix.git
 
-# Donload from IBM Informix installation files and copy it to repository
-cp iif.12.10.FC3IE.linux-x86_64.tar docker-informix
+## Download IBM Informix installation files from IBM and copy it
+cp iif.*.linux-x86_64.tar .
 
-# Edit docker file if necesary
-$EDITOR Dockerfile
+## Start HTTP server with Informix image
+python -m SimpleHTTPServer 9090 &
+PY_HTTP=$!
 
-# Build docker image
-sudo docker build docker-informix
+## Build docker image (Dockerfile may require minor changes)
+sudo docker build -t docker-informix docker-informix
+
+## Shutdown HTTP server
+kill $PY_HTTP
 ```
 
 
-Versions tested with this script
---------------------------------------------------
-
-| Informix Version (x86_64)     | Ubuntu 14.10       | Ubuntu 14.04       | Ubuntu 13.10       | Ubuntu 13.04   | Ubuntu 12.10   | Ubuntu 12.04       | Ubuntu 10.04       |
-| :-----------------------------|:------------------:|:------------------:|:------------------:|:--------------:|:--------------:|:------------------:|:------------------:|
-| 12.10.FC3 Innovator Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :x:                |
-| 12.10.FC3 Developer Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :x:                |
-| 12.10.FC3 Time Limited        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :x:                |
-| 11.70.FC8 Developer Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :white_check_mark: |
-| 11.70.FC8 Innovator Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :white_check_mark: |
-| 11.70.FC8 Time Limited        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: 1          | :x: 1          | :white_check_mark: | :white_check_mark: |
-| 11.50.FC9 Developer Edition   | :x: 2              | :x: 2              | :x: 2              | :x: 1          | :x: 1          | :x: 2              | :x: 2              |
-| 11.50.FC9 Time Limited        | :x: 2              | :x: 2              | :x: 2              | :x: 1          | :x: 1          | :x: 2              | :x: 2              |
+Starting Informix container (Ubuntu host)
+---------------------------------------------
 
 
+### Creating Informix with volume and expose it on port 9088
+```bash
+sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix docker-informix
+```
 
- ### Legend:
+
+### The same as above but create also new empty "test" database
+
+```bash
+sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix -e DB_USER=test -e DB_PASS=test -e DB_NAME=test docker-informix
+```
+
+
+
+### Using created container (Informix Database)
+
+```
+johny@ThinkPad:~/$ docker ps -a
+CONTAINER ID        IMAGE                    COMMAND             CREATED             STATUS                     PORTS               NAMES
+00e73b00c498        docker-informix:latest   "/bin/bash"         About an hour ago   Exited (0) 6 seconds ago                       informix   
+
+johny@ThinkPad:~/$ docker start 00e73b00c498
+00e73b00c498
+
+johny@ThinkPad:~/$ docker attach 00e73b00c498
+
+IDS-12.10 dev: 
+IDS-12.10 dev: 
+IDS-12.10 dev: 
+```
+
+Connect to your Informix database
+---------------------------------------
+
+For connecting to Informix Database you can use [SQLWorkbench/J](http://www.sql-workbench.net/) with additional 
+JDBC Drivers which are in Informix Bundle or can be downloaded separetly from [IBM Informix JDBC Driver Download Page](http://www14.software.ibm.com/webapp/download/search.jsp?go=y&rs=ifxjdbc).
+
+JDBC connect string
+
+````
+jdbc:informix-sqli://127.0.0.1:9088/test:INFORMIXSERVER=dev;user=test;password=test;CLIENT_LOCALE=en_US.utf8;DB_LOCALE=en_US.utf8
+````
+
+Available and supported Informix Editions for Docker (x86_64 versions only)
+----------------------------------------------------------------------------------
+
+ * 12.10FC4TL - Informix Enterprise Time-Limited Edition for Linux x86_64 (iif.12.10.FC4TL.linux-x86_64.tar)
+ * 12.10FC4DE - Informix Developer Edition for Linux x86_64 (iif.12.10.FC4DE.linux-x86_64.tar)
+ * 12.10FC4IE - Informix Innovator-C Edition for Linux x86_64 (iif.12.10.FC4IE.linux-x86_64.tar)
+ * 11.70FC8DE - Informix Developer Edition for Linux x86_64 (iif.11.70.FC8DE.linux-x86_64.tar)
+ * 11.70FC8IE - Informix Innovator-C Edition for Linux x86_64 (iif.11.70.FC8IE.linux-x86_64.tar)
+ * 11.50FC9DE - Informix Developer Edition for Linux x86_64 (iif.11.50.FC9DE.linux-x86_64.tar)
+
+
+| Informix Version (x86_64)     | Ubuntu 14.10       | Ubuntu 14.04       | Debian 7 (wheezy)  |
+| :-----------------------------|:------------------:|:------------------:|:------------------:|
+| 12.10.FC4 Time Limited        | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 12.10.FC4 Innovator Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 12.10.FC4 Developer Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 11.70.FC8 Developer Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 11.70.FC8 Innovator Edition   | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 11.70.FC8 Time Limited        | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+
+
+### Legend:
 
  * :white_check_mark: - Installation completed succesfully
  * :x: - Instalation failed
  * :pushpin: - Notes
  
- ### Notes:
+### Additional notes:
 
- 1. Ubuntu 13.04 was supported to 2014-01-27 and 12.10 was supported to 2014-05-16 after this dates 
-    script installing Informix was unable to upgrade distribution and install dependencies using apt-get.
- 
- 2. Installing IDS 11.50 leads to this error:
+1. Informix installation script supports only Informix 11.70 and later.
 
-```
-Install, IsRoot, err, CUSTOM_BEAN_ERROR_BEGIN
-securityService:Error invoking isCurrentUserAdmin Got exception: com.installshield.util.ProcessExecException: /tmp/ismp001/gushellsupport.sh^@: cannot execute
-CUSTOM_BEAN_ERROR_END
-```
-[Maybe it would work on older versions of Ubuntu](http://www-01.ibm.com/support/docview.wss?uid=swg27013343#linux).
+2. Informix installation script supports only Debian 7 Wheezy and Ubuntu 14.04 LTS+ OS.
 
-How building container looks
----------------------------------
+3. It is known that Informix installation script runs smoothly on Ubuntu 13.10, Ubuntu 12.04 but I will not support it officialy.
+   Other versions of Ubuntu (Ubuntu 13.04, Ubuntu 12.10, Ubuntu 10.04) are not working due to end of support from Canoncial. 
+
+4. If your Informix version is released after 11.50FC9DE it will be probably also supported.
+
+For more information about this refer to [supported platforms for Informix](http://www-01.ibm.com/support/docview.wss?uid=swg27013343#linux) on IBM website 
+and [Ubuntu LTS Release cycle](https://wiki.ubuntu.com/LTS).
+
+How container building looks like
+-----------------------------------
 
 ````
-Step 0 : FROM ubuntu:14.10
-....
-Step 7 : RUN bash ./informix_install.sh iif.12.10.FC3IE.linux-x86_64.tar
- ---> Running in 077d39c2dde5
+johny@ThinkPad:~/Pulpit/projects/github$ sudo docker build -t docker-informix docker-informix 
+Sending build context to Docker daemon 154.6 kB
+Sending build context to Docker daemon 
+Step 0 : FROM debian:wheezy
+ ---> f6fab3b798be
+Step 1 : MAINTAINER Tomasz Gaweda
+ ---> Running in 94c33b1c5cf3
+ ---> 327f8ea65618
+Removing intermediate container 94c33b1c5cf3
+Step 2 : RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+ ---> Running in 2bd5145f5f0d
+ ---> d144b00bcda7
+Removing intermediate container 2bd5145f5f0d
+Step 3 : ENV http_proxy http://172.17.42.1:8080/
+ ---> Running in 0918c5880aca
+ ---> 4b1e343d3cdf
+Removing intermediate container 0918c5880aca
+Step 4 : RUN apt-get update && apt-get -y install wget
+ ---> Running in c062c68e30a6
+Get:1 http://security.debian.org wheezy/updates Release.gpg [836 B]
+Get:2 http://security.debian.org wheezy/updates Release [102 kB]
+Get:3 http://http.debian.net wheezy Release.gpg [1655 B]
+Get:4 http://http.debian.net wheezy-updates Release.gpg [836 B]
+Get:5 http://http.debian.net wheezy Release [168 kB]
+Get:6 http://security.debian.org wheezy/updates/main amd64 Packages [287 kB]
+...
+...
+...
+Setting up wget (1.13.4-3+deb7u2) ...
 ###############################################
-# IBM Informix Installation script for Ubuntu #
+# IBM Informix Installation script for Debian #
 ###############################################
->>>    OS version: Ubuntu Utopic Unicorn (development branch)
->>>    Upgrading OS and installing dependencies for Informix
-....
+>>>    OS version: Debian 7.7
+>>>    Linux Kernel version: Linux 064f0e1ce709 3.13.0-43-generic #72-Ubuntu SMP Mon Dec 8 19:35:06 UTC 2014 x86_64 GNU/Linux
+>>>    Upgrading OS and installing dependencies for Informix 12.10
+Get:1 http://security.debian.org wheezy/updates Release.gpg [836 B]
+Get:2 http://security.debian.org wheezy/updates Release [102 kB]
+Get:3 http://security.debian.org wheezy/updates/main amd64 Packages [287 kB]
+...
+...
+...
+Setting up mksh (40.9.20120630-7) ...
+update-alternatives: using /bin/mksh to provide /bin/ksh (ksh) in auto mode
+Setting up pdksh (40.9.20120630-7) ...
 >>>    Create group and user for Informix
->>>    Uncompress Informix Archive: iif.12.10.FC3IE.linux-x86_64.tar
+>>>    Uncompress Informix Archive: iif.12.10.FC4DE.linux-x86_64.tar
 >>>    Launch silent install ...
+...
+...
+...
 >>>    Postconfig onconfig ...
 >>>    Postconfig sqlhost ...
 >>>    Include tcp support ...
 >>>    Create informix user environnement
->>>    Create directory structure
->>>    Chown directory structure
+>>>    Chown Informix binary directory structure
+>>>    Create data directory
+>>>    Deleting unpacked files
+>>>    Deleting downloaded packages
 ###############################################
 #         Installation completed              #
 ###############################################
- * Switch to Informix user with: su - informix
- * Initialize engine with: oninit -ivy
- * Check if engine is Online with: onstat -l
-###############################################
- ---> 1f538523a259
-....
-Step 9 : RUN bash start_ifx.sh
- ---> Running in 38b1272b8cb0
-16:10:18  Parameter's user-configured value was adjusted. (MAX_PDQPRIORITY)
-16:10:18  IBM Informix Dynamic Server Started.
-16:10:18  Warning: The IBM IDS Innovator-C Edition license restriction limits
-16:10:18  the total shared memory size for this server to 2097152 KB.
-16:10:18  The maximum allowable shared memory was reset to this size to start the database server. 
-16:10:18  Requested shared memory segment size rounded from 4308KB to 4788KB
-Reading configuration file '/opt/IBM/Informix/etc/onconfig.dev'...succeeded
-Creating /INFORMIXTMP/.infxdirs...succeeded
-Allocating and attaching to shared memory...succeeded
-Creating resident pool 4310 kbytes...succeeded
-Creating infos file "/opt/IBM/Informix/etc/.infos.dev"...succeeded
-Linking conf file "/opt/IBM/Informix/etc/.conf.dev"...succeeded
-Initializing rhead structure...rhlock_t 16384 (512K)... rlock_t (2656K)...
-16:10:19  Could not disable priority aging: errno = 13[0m[91m
-16:10:19  Requested shared memory segment size rounded from 110629KB to 110632KB
-16:10:20  Successfully added a bufferpool of page size 2K.
-16:10:20  Event alarms enabled.  ALARMPROG = '/opt/IBM/Informix/etc/alarmprogram.sh'
-16:10:20  Booting Language <c> from module <>
-16:10:20  Loading Module <CNULL>[0m[91m
-16:10:20  Booting Language <builtin> from module <>
-16:10:20  Loading Module <BUILTINNULL>
-Writing to infos file...succeeded
-Initialization of Encryption...succeeded
-Initializing ASF...succeeded
-Initializing Dictionary Cache and SPL Routine Cache...succeeded
-Bringing up ADM VP...succeeded
-Creating VP classes...succeeded
-Forking main_loop thread...succeeded
-Initializing DR structures...succeeded
-Forking 1 'soctcp' listener threads...succeeded
-Starting tracing...succeeded
-Initializing 8 flushers...succeeded
-Initializing log/checkpoint information...succeeded
-Initializing dbspaces...succeeded
-Opening primary chunks...succeeded
-Validating chunks...succeeded
-Creating database partition...succeeded
-Initialize Async Log Flusher...succeeded
-Starting B-tree Scanner...succeeded
-Init ReadAhead Daemon...succeeded
-Initializing DBSPACETEMP list...succeeded
-Init Auto Tuning Daemon...succeeded
-Checking database partition index...succeeded
-Initializing dataskip structure...succeeded
-Checking for temporary tables to drop...succeeded
-Updating Global Row Counter...succeeded
-Forking onmode_mon thread...succeeded
-Creating periodic thread...succeeded
-Creating periodic thread...succeeded
-Starting scheduling system...succeeded
-Verbose output complete: mode = 5
- ---> 1c4a3b6d3c1a
-Removing intermediate container 38b1272b8cb0
-Step 10 : CMD ["/bin/bash"]
- ---> Running in bb012ac1b80b
- ---> 82ba3d102924
-Removing intermediate container bb012ac1b80b
-Successfully built 82ba3d102924
+ ---> 0882dd952081
+Removing intermediate container 101f906ac264
+Step 5 : RUN echo "%sudo ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+ ---> Running in c25b3c8037fd
+ ---> b4039e0f53c3
+Removing intermediate container c25b3c8037fd
+Step 6 : VOLUME /home/informix/data
+ ---> Running in b3c5b5e5b3e0
+ ---> 3fb24892267c
+Removing intermediate container b3c5b5e5b3e0
+Step 7 : USER informix
+ ---> Running in d08eecd141bb
+ ---> 5cc434bd8078
+Removing intermediate container d08eecd141bb
+Step 8 : CMD [ /bin/bash informix_start.sh ; /bin/bash ; /bin/bash informix_stop.sh ]
+ ---> Running in 77efa4c00477
+ ---> 65982dbe23da
+Removing intermediate container 77efa4c00477
+Successfully built 65982dbe23da
 ````
+
+How does starting container for the first time looks like?
+--------------------------------------------------------------
+
+```
+johny@ThinkPad:~/$ sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix -e DB_USER=test -e DB_PASS=test -e DB_NAME=test docker-informix
+>>>    Create data directory structure in /home/informix//data/ (ifx initialization)
+>>>    Create user "test"...
+>>>    Starting up the IBM Informix Database (dev) ... 
+*** Startup of dev SUCCESS ***
+>>>    Create database "test"...
+>>>    Grant DBA to database "test" for user "test"...
+IBM Informix Dynamic Server Version 12.10.FC4DE Software Serial Number AAA#B000000
+  #################################################
+  # Informix container login information:          
+  #   database:    test                  
+  #   user:        test                  
+  #   password:    test                  
+  #################################################
+
+IDS-12.10 dev: exit
+>>>    Stopping the IBM Informix Database (dev) ... 
+*** Shutdown of dev SUCCESS ***
+```
+
+
+How does resuming stopped container looks like?
+-----------------------------------------------------------------------
+
+```
+johny@ThinkPad:~/$ docker ps -a
+CONTAINER ID        IMAGE                    COMMAND                CREATED             STATUS                     PORTS               NAMES
+c7cc39dd2e7f        docker-informix:latest   "/bin/sh -c '/bin/ba   5 minutes ago       Exited (0) 2 seconds ago                       informix           
+
+
+johny@ThinkPad:~/$ docker start -ai c7cc39dd2e7f
+>>>    Starting up the IBM Informix Database (dev) ... 
+*** Startup of dev SUCCESS ***
+IBM Informix Dynamic Server Version 12.10.FC4DE Software Serial Number AAA#B000000
+  #################################################
+  # Informix container login information:          
+  #   database:    test                  
+  #   user:        test                  
+  #   password:    test                  
+  #################################################
+
+IDS-12.10 dev: exit
+>>>    Stopping up the IBM Informix Database (dev) ... 
+*** Shutdown of dev SUCCESS ***
+```
+
+
+Is docker-informix container ready for production use?
+--------------------------------------------------------
+
+This Dockerfile is created with "best practices" in mind but if you would like to deploy it as production you 
+should read more about "data only container pattern" and docker volumes from this links [1](https://docs.docker.com/userguide/dockervolumes/), [2](https://groups.google.com/forum/#!msg/docker-user/EUndR1W5EBo/4hmJau8WyjAJ), [3](http://container42.com/2014/11/03/docker-indepth-volumes/), 
+[4](http://container42.com/2014/11/18/data-only-container-madness/).
+
+If you are planing to run it on production you should also change configuration of Informix Database - now it is almost default. 
+For more informations please refer to [Informix Innovator-C - quick start guide](http://www.informix-dba.com/p/informix-innovator-c-quick-start-guide.html).
+
 
 What is missing in this repository
 ------------------------------------------
- - No start scripts for container
- - DATA_DIR should be outside Docker container
- - Install some additional tools for Informix
-    - Perl, PHP, Python bindings
-    - Various tools for administrators form IIDUG (alternative for dbaccess)
+
+ * Perl, PHP, Python bindings
+ * Various tools from IIDUG (alternatives for default IBM tools)
 
 
-Available Informix Editions for Docker (x86_64 versions only)
-----------------------------------------------------------------------
-
-You can [download Informix from IBM](http://www-01.ibm.com/software/data/informix/downloads.html).
-
-All versions listed below are distributed with Chinese Simplified, Chinese Traditional, 
-Czech, English, French, German, Hungarian, Italian, Japanese, Korean, Polish, Portuguese Brazilian, 
-Russian, Slovakian, Spanish language support.
-
-
-<dl>
-  <dt>iif.12.10.FC3TL.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 12.10FC3TL - Informix Enterprise Time-Limited Edition for Linux x86_64</li>
-  		<li><em>Release date: </em> 2014-03-06</li>
-  		<li><em>md5sum:</em> b6d5207f28c3a84ed21df04ec8c5a1f3</li>
-  	</ul>
-  </dd>
-
-  <dt>iif.12.10.FC3DE.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 12.10FC3DE - Informix Developer Edition for Linux x86_64</li>
-  		<li><em>Release date:</em> 2014-03-06</li>
-  		<li><em>md5sum:</em> ef4263fcc70af7ce7baf3425ddb7befc</li>
-  	</ul>
-  </dd>
-
-  <dt>iif.12.10.FC3IE.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 12.10FC3IE - Informix Innovator-C Edition for Linux x86_64</li>
-  		<li><em>Release date:</em> 2014-03-06</li>
-  		<li><em>md5sum:</em> 8559309f1f3fdd2937fb947b9253ba41</li>
-  	</ul>
-  </dd>
-
-
-  <dt>iif.11.70.FC8TL.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version: </em>11.70FC8TL - Informix Ultimate Time-Limited Edition for Linux x86_64</li>
-  		<li><em>Release date: </em>2014-01-09</li>
-  		<li><em>md5sum:</em> a2be166dae9961319c5a520db46760a2</li>
-  	</ul>
-  </dd>
-
-
-  <dt>iif.11.70.FC8DE.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 11.70FC8DE - Informix Developer Edition for Linux x86_64</li>
-  		<li><em>Release date:</em> 2014-01-09</li>
-  		<li><em>md5sum:</em> d69e49913d91a721107be56067b9366c</li>
-  	</ul>
-  </dd>
-
-  <dt>iif.11.70.FC8IE.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 11.70FC8IE - Informix Innovator-C Edition for Linux x86_64</li>
-  		<li><em>Release date:</em> 2014-01-09</li>
-  		<li><em>md5sum:</em> 9aa034ecfa89f31934135b0c01b81062</li>
-  	</ul>
-  </dd>
-
-  <dt>iif.11.50.FC9TL.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 1.50FC9TL - Informix Ultimate Edition Time-Limited for Linux x86_64</li>
-  		<li><em>Release date:</em> 2011-08-15</li>
-  		<li><em>md5sum:</em> e00d53686ef83d6c4806750ef64a5c89</li>
-  	</ul>
-  </dd>
-
-  <dt>iif.11.50.FC9DE.linux-x86_64.tar</dt>
-  <dd>
-  	<ul>
-  		<li><em>Version:</em> 11.50FC9DE - Informix Developer Edition for Linux x86_64</li>
-  		<li><em>Release date:</em> 2011-08-15</li>
-  		<li><em>md5sum:</em> 22d12d7834164d52a0a06d81f12950cf</li>
-  	</ul>
-  </dd>
-
-</dl>
-
-
-
-Additional references:
---------------------------
-
- * [Supported platforms for Informix](http://www-01.ibm.com/support/docview.wss?uid=swg27013343#linux).
- * [Building docker images using http cache](http://stackoverflow.com/questions/22030931/how-to-rebuild-dockerfile-quick-by-using-cache)
- * [IBM Informix Download page](http://www-01.ibm.com/software/data/informix/downloads.html)
- * [Other Informix install script](https://github.com/zephilou/ubuntu-14.04)
-
-Informix tools which may be usefull:
----------------------------------------
+Informix tools which may be usefull but are not installed by default
+-----------------------------------------------------------------------
 
  - https://github.com/rgburnett/informixutils
  - https://github.com/fzilic/informix-util
  - https://github.com/sqrt529/informix_locks
  - https://github.com/rgburnett/imigrate/
 
- License:
+
+Additional references
+--------------------------
+ 
+ * [Building docker images using http cache](http://stackoverflow.com/questions/22030931/how-to-rebuild-dockerfile-quick-by-using-cache)
+ * [Exposing Dockerized services](http://stackoverflow.com/questions/22111060/difference-between-expose-and-publish-in-docker)
+ * [Other Informix install script](https://github.com/zephilou/ubuntu-14.04)
+ * [Building good Docker images](http://jonathan.bergknoff.com/journal/building-good-docker-images)
+ * [6 tips for building good Docker images](http://container-solutions.com/2014/11/6-dockerfile-tips-official-images/)
+ * [Sandboxing proprietary applications in Docker](http://www.jann.cc/2014/09/06/sandboxing_proprietary_applications_with_docker.html)
+
+
+License:
 ---------------------
 
 License Apache License Version 2.0, January 2004 (https://tldrlegal.com/ ; http://choosealicense.com/)

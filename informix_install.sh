@@ -1,33 +1,33 @@
 #!/bin/bash
 
 #  name:        informix_install.sh:
-#  description: Install Informix on Ubuntu
+#  description: Install Informix on Debian
 #  url:         https://github.com/0x1fff/docker-informix
 #
 #  usage:       Please run as root!
 #               ./informix_install.sh iif.12.10.FC3IE.linux-x86_64.tar
 #
-#  Detailed Desription:
-#   - Upgrades system and fetches Informix dependencies
+#  Detailed Description:
+#   - Upgrades Debian based system and fetches Informix dependencies
 #   - Unpacks archive with Informix
 #   - Installs Informix in given location
-#
-#  What is missing (TODO):
-#   - No start scripts
-#   - DATA_DIR should be outside Docker container
 #
 
 ARCHIVE_PATH=$1
 UNPACK_DIR=/opt/IBM/informix-src
 INSTALL_DIR=/opt/IBM/informix
-DATA_DIR=/home/informix
+USER_HOME="/home/informix/"
+DATA_DIR="${USER_HOME}/data/"
 INSTANCE_NAME=dev
 USER_PASS="ifx_pass"
 IFXDB_VERSION=""
 IFX_INSTALL_ARGS="-i silent"
 
+# Delete downloaded data
+DO_CLEANUP="YES"
+
 echo "###############################################"
-echo "# IBM Informix Installation script for Ubuntu #"
+echo "# IBM Informix Installation script for Debian #"
 echo "###############################################"
 
 function myfatal {
@@ -37,9 +37,12 @@ function myfatal {
 	fi
 }
 
-if [ $# -ne 1 ] ; then 
+
+## TODO: Add code to download Informix from public ftp/http
+if [ $# -ne 1 ] ; then
     myfatal 255 "usage: "$0" <informix_file.tar>"
-fi 
+fi
+
 
 if [ ! -f "${ARCHIVE_PATH}" -o ! -r "${ARCHIVE_PATH}" ] ; then
     myfatal 254 "File "$1" is not readable file"
@@ -70,21 +73,34 @@ case "${ARCHIVE_PATH}" in
 		;;
 esac
 
-. /etc/lsb-release
-echo ">>>    OS version: "${DISTRIB_DESCRIPTION}
+# Get DISTRIB_DESCRIPTION
+DISTRIB_DESCRIPTION=`uname -a`
+KERNEL_VERSION=`uname -a`
+if [ -e /etc/lsb-release ] ; then
+	. /etc/lsb-release
+elif [ -e /etc/debian_version ] ; then
+	DISTRIB_DESCRIPTION="Debian "`cat /etc/debian_version`
+fi
+
+echo ">>>    OS version: ${DISTRIB_DESCRIPTION}"
+echo ">>>    Linux Kernel version: ${KERNEL_VERSION}"
 echo ">>>    Upgrading OS and installing dependencies for Informix ${IFXDB_VERSION}"
 apt-get update  -qy
 myfatal $? "apt-get update failed"
 apt-get upgrade -qy
 myfatal $? "apt-get upgrade failed"
+apt-get install -qy apt-utils adduser file sudo
+myfatal $? "apt-get install apt-utils adduser file"
 apt-get install -qy libaio1 bc pdksh libncurses5 ncurses-bin libpam0g
 myfatal $? "apt-get dependencies failed"
-apt-get install -qy adduser file build-essential
-myfatal $? "apt-get build-essential failed"
 
 echo ">>>    Create group and user for Informix"
+USER_ADD_CREATE_HOME=""
+if [ ! -d "${USER_HOME}" ] ; then
+	USER_ADD_CREATE_HOME="-m"
+fi
 groupadd informix -g 200 >/dev/null
-useradd -m -d "${DATA_DIR}" -g informix -u 200 informix  >/dev/null
+useradd ${USER_ADD_CREATE_HOME} -d "${USER_HOME}" -g informix -u 200 informix  >/dev/null
 adduser informix sudo  >/dev/null
 echo "informix:${USER_PASS}" | chpasswd
 
@@ -163,7 +179,7 @@ fi
 
 
 echo ">>>    Create informix user environnement"
-cat <<EOF > "${DATA_DIR}"/ifx_${INSTANCE_NAME}.env
+cat <<EOF > "${USER_HOME}"/ifx_${INSTANCE_NAME}.env
 export INFORMIXSERVER=${INSTANCE_NAME}
 export INFORMIXDIR="${INSTALL_DIR}"
 export INFORMIXTERM=terminfo
@@ -179,31 +195,30 @@ export PS1="IDS-${IFXDB_VERSION} ${INSTANCE_NAME}: "
 export MSGPATH=""${DATA_DIR}"/logs/informix.log"
 EOF
 
-echo ">>>    Create directory structure"
-mkdir -p "${DATA_DIR}"/logs
-mkdir -p "${DATA_DIR}"/backup/datas
-mkdir -p "${DATA_DIR}"/backup/logs
-mkdir -p "${DATA_DIR}"/spaces/dbs_root/
-touch "${DATA_DIR}"/spaces/dbs_root/dbs_root.000
-chmod 660 "${DATA_DIR}"/spaces/dbs_root/dbs_root.000
-
-echo ">>>    Chown directory structure"
+echo ">>>    Chown Informix binary directory structure"
 chown informix: "${INSTALL_DIR}"/etc/*.dev 
-chown -R informix: "${DATA_DIR}"/{logs,backup,spaces}
-chmod -R 777 "${DATA_DIR}"/backup
-chown informix: "${DATA_DIR}"/ifx_dev.env
+chown informix: "${USER_HOME}/ifx_${INSTANCE_NAME}.env"
+
+echo ">>>    Create data directory"
+mkdir -p "${DATA_DIR}"
+chown -R informix: "${DATA_DIR}"
 
 # Add user enviroment to .bashrc
-echo "">> "${DATA_DIR}"/.bashrc
-echo ". ${DATA_DIR}/ifx_dev.env" >>"${DATA_DIR}"/.bashrc
+echo "">> "${USER_HOME}"/.bashrc
+echo ". ${USER_HOME}/ifx_${INSTANCE_NAME}.env" >>"${USER_HOME}"/.bashrc
 
 echo ">>>    Deleting unpacked files"
 rm -rf "${UNPACK_DIR}"
+myfatal $? "rm ${UNPACK_DIR} failed"
+
+if [ "${DO_CLEANUP}" == "YES" ] ; then
+	echo ">>>    Deleting downloaded packages"
+	rm -rf /var/lib/apt/lists/*
+	myfatal $? "rm /var/lib/apt/lists/ failed"
+	rm -rf /var/cache/apt/archives/*
+	myfatal $? "rm /var/cache/apt/archives/ failed"
+fi
 
 echo "###############################################"
 echo "#         Installation completed              #"
-echo "###############################################"
-echo " * Switch to Informix user with: su - informix"
-echo " * Initialize engine with: oninit -ivy"
-echo " * Check if engine is Online with: onstat -l"
 echo "###############################################"
