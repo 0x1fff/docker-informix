@@ -7,13 +7,6 @@
 
 set -o pipefail
 
-export INFORMIX_HOME="/home/informix/"
-export INFORMIX_DATA_DIR="${INFORMIX_HOME}/data/"
-export MYINFORMIX_DBSPACE="dbs_root"
-
-source "${INFORMIX_HOME}/.bashrc"
-source "${INFORMIX_HOME}/ifx_dev.env"
-
 function myfatal {
 	if [ "${1}" -ne 0 ] ; then
 		echo "${2}" >&2
@@ -21,7 +14,16 @@ function myfatal {
 	fi
 }
 
+export INFORMIX_HOME="/home/informix/"
+INFORMIX_HOME="${INFORMIX_HOME%/}" # Strip the trailing / (if exists)
 
+export INFORMIX_DATA_DIR="${INFORMIX_HOME}/data/"
+INFORMIX_DATA_DIR="${INFORMIX_DATA_DIR%/}"
+
+export MYINFORMIX_DBSPACE="dbs_root"
+
+source "${INFORMIX_HOME}/.bashrc"
+source "${INFORMIX_HOME}/ifx_dev.env"
 
 if [ ! -e "${INFORMIX_DATA_DIR}/.initialized" ] ; then
 	echo ">>>    Create data directory structure in ${INFORMIX_DATA_DIR} (ifx initialization)"
@@ -40,7 +42,6 @@ if [ ! -e "${INFORMIX_DATA_DIR}/.initialized" ] ; then
 	oninit -iy && touch "${INFORMIX_DATA_DIR}/.initialized"
 	onmode -ky
 fi
-
 
 
 DB_NAME=${DB_NAME:-}

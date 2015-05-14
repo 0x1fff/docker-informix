@@ -16,8 +16,13 @@
 ARCHIVE_PATH=$1
 UNPACK_DIR=/opt/IBM/informix-src
 INSTALL_DIR=/opt/IBM/informix
+
 USER_HOME="/home/informix/"
+USER_HOME="${USER_HOME%/}" # Strip the trailing /
+
 DATA_DIR="${USER_HOME}/data/"
+DATA_DIR="${DATA_DIR%/}" # Strip the trailing /
+
 INSTANCE_NAME=dev
 USER_PASS="ifx_pass"
 IFXDB_VERSION=""
@@ -119,7 +124,7 @@ if [ "${IFXDB_VERSION}" = "11.50" ] ; then
    cp ${BUNDLE_FILE} ${BUNDLE_FILE}.bak
    sed -i 's/licenseAccepted=false/licenseAccepted=true/g'                          ${BUNDLE_FILE}
    sed -i 's/csdk.active=false/csdk.active=true/g'                                  ${BUNDLE_FILE}
-   sed -i "s#UserInformixInfo.Homedir=.*#UserInformixInfo.Homedir=${DATA_DIR}#g"    ${BUNDLE_FILE}
+   sed -i "s#UserInformixInfo.Homedir=.*#UserInformixInfo.Homedir=${DATA_DIR}/#g"    ${BUNDLE_FILE}
    sed -i "s#installLocation=.*#installLocation=${INSTALL_DIR}#g"                   ${BUNDLE_FILE}
    sed -i "s/UserInformixInfo.Password=.*/UserInformixInfo.Password=${USER_PASS}/g" ${BUNDLE_FILE}
    #   sed 's/demoinput.CreateDemo="nocreate"/demoinput.CreateDemo="create"/g'

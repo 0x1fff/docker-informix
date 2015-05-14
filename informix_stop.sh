@@ -7,18 +7,21 @@
 
 set -o pipefail
 
-export INFORMIX_HOME="/home/informix/"
-export INFORMIX_DATA_DIR="${INFORMIX_HOME}/data/"
-
-source "${INFORMIX_HOME}/.bashrc"
-source "${INFORMIX_HOME}/ifx_dev.env"
-
 function myfatal {
     if [ "${1}" -ne 0 ] ; then
         echo "${2}" >&2
         exit $1
     fi
 }
+
+export INFORMIX_HOME="/home/informix/"
+INFORMIX_HOME="${INFORMIX_HOME%/}" # Strip the trailing / (if exists)
+
+export INFORMIX_DATA_DIR="${INFORMIX_HOME}/data/"
+INFORMIX_DATA_DIR="${INFORMIX_DATA_DIR%/}"
+
+source "${INFORMIX_HOME}/.bashrc"
+source "${INFORMIX_HOME}/ifx_dev.env"
 
 echo ">>>    Stopping the IBM Informix Database (${INFORMIXSERVER}) ... "
 
