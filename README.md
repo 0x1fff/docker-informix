@@ -31,22 +31,13 @@ sudo apt-get purge docker.io
 curl -s https://get.docker.io/ubuntu/ | sudo sh
 
 ## Create enviroment for docker-informix container build
-mkdir informix_build
-cd informix_build
-git clone https://github.com/0x1fff/docker-informix.git
+git clone https://github.com/0x1fff/docker-informix.git && cd docker-informix
 
 ## Download IBM Informix installation files from IBM and copy it
-cp iif.*.linux-x86_64.tar .
-
-## Start HTTP server with Informix image
-python -m SimpleHTTPServer 9090 &
-PY_HTTP=$!
+cp /Software/iif.11.50.FC7DE.linux-x86_64.tar .
 
 ## Build docker image (Dockerfile may require minor changes)
-sudo docker build -t docker-informix docker-informix
-
-## Shutdown HTTP server
-kill $PY_HTTP
+sudo docker build -t docker-informix .
 ```
 
 
