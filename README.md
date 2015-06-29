@@ -31,22 +31,16 @@ sudo apt-get purge docker.io
 curl -s https://get.docker.io/ubuntu/ | sudo sh
 
 ## Create enviroment for docker-informix container build
-mkdir informix_build
-cd informix_build
-git clone https://github.com/0x1fff/docker-informix.git
+git clone https://github.com/0x1fff/docker-informix.git && cd docker-informix
 
 ## Download IBM Informix installation files from IBM and copy it
-cp iif.*.linux-x86_64.tar .
+cp /Software/iif.11.50.FC7DE.linux-x86_64.tar .
 
-## Start HTTP server with Informix image
-python -m SimpleHTTPServer 9090 &
-PY_HTTP=$!
+## Download daemonizer tool
+wget https://raw.githubusercontent.com/Predictia/maven-repo/master/releases/es/predictia/daemonizer/0.0.2/daemonizer-0.0.2.jar -O daemonizer.jar
 
 ## Build docker image (Dockerfile may require minor changes)
-sudo docker build -t docker-informix docker-informix
-
-## Shutdown HTTP server
-kill $PY_HTTP
+sudo docker build -t docker-informix .
 ```
 
 
@@ -64,25 +58,6 @@ sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix docke
 
 ```bash
 sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix -e DB_USER=test -e DB_PASS=test -e DB_NAME=test docker-informix
-```
-
-
-
-### Using created container (Informix Database)
-
-```
-johny@ThinkPad:~/$ docker ps -a
-CONTAINER ID        IMAGE                    COMMAND             CREATED             STATUS                     PORTS               NAMES
-00e73b00c498        docker-informix:latest   "/bin/bash"         About an hour ago   Exited (0) 6 seconds ago                       informix   
-
-johny@ThinkPad:~/$ docker start 00e73b00c498
-00e73b00c498
-
-johny@ThinkPad:~/$ docker attach 00e73b00c498
-
-IDS-12.10 dev: 
-IDS-12.10 dev: 
-IDS-12.10 dev: 
 ```
 
 Connect to your Informix database
