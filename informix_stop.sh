@@ -25,6 +25,9 @@ source "${INFORMIX_HOME}/ifx_dev.env"
 
 echo ">>>    Stopping the IBM Informix Database (${INFORMIXSERVER}) ... "
 
-onmode -ky
+onmode -kuy
+## -k   Shutdown completely
+## -u   Change to quiescent mode and kill all attached sessions
+## -y   Do not require confirmation
 myfatal $? "*** Shutdown of ${INFORMIXSERVER} FAILED***"
 echo "*** Shutdown of ${INFORMIXSERVER} SUCCESS ***"
