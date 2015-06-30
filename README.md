@@ -5,7 +5,7 @@ Debian/Ubuntu based docker container with IBM Informix Dynamic Server.
 
 The Informix Database Server is offered in a number of editions, including free developer editions, editions for small and mid-sized business, 
 and editions supporting the complete feature set and designed to be used in support of the largest enterprise applications. 
-If you are confused which version of Inforix choose use [Informix feature description](http://www.ibm.com/developerworks/data/library/techarticle/dm-0801doe/index.html#table).
+If you are confused which version of Informix choose use [Informix feature description](http://www.ibm.com/developerworks/data/library/techarticle/dm-0801doe/index.html#table).
 
 Informix is generally considered to be optimized for environments with very low or no database administration, 
 including use as an embedded database. It has a long track record of supporting very high transaction rates 
@@ -15,11 +15,9 @@ overhead makes it useful for in-store deployments.
 
 To use this project you have to [download Informix installation files from IBM Informix Download page](http://www-01.ibm.com/software/data/informix/downloads.html) on your own (registration required).
 
-Recently IBM announced cloud platform called [Bluemix](http://bluemix.net/). 
-There is no Informix Database Software on IBM Bluemix (there is PostgreSQL, MySQL, MongoDB) 
-so I have created this small project to create Docker container with Informix. 
+Recently IBM announced cloud platform called [Bluemix](http://bluemix.net/), but there is no Informix Database Software on this service (there is PostgreSQL, MySQL, MongoDB) so I have created this project to provide Docker container with Informix. 
 
-I am not sure that this container is production ready - I am using it for developement and testing.
+I am not sure if this container is production ready. I am using it for my developement and testing.
 
 
 Building Informix container image (Ubuntu host)
@@ -53,7 +51,6 @@ kill $PY_HTTP
 Starting Informix container (Ubuntu host)
 ---------------------------------------------
 
-
 ### Creating Informix with volume and expose it on port 9088
 ```bash
 sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix docker-informix
@@ -65,8 +62,6 @@ sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix docke
 ```bash
 sudo docker run -it -v "/home/informix/data/" -p 9088:9088 --name informix -e DB_USER=test -e DB_PASS=test -e DB_NAME=test docker-informix
 ```
-
-
 
 ### Using created container (Informix Database)
 
@@ -279,8 +274,7 @@ Is docker-informix container ready for production use?
 --------------------------------------------------------
 
 This Dockerfile is created with "best practices" in mind but if you would like to deploy it as production you 
-should read more about "data only container pattern" and docker volumes from this links [1](https://docs.docker.com/userguide/dockervolumes/), [2](https://groups.google.com/forum/#!msg/docker-user/EUndR1W5EBo/4hmJau8WyjAJ), [3](http://container42.com/2014/11/03/docker-indepth-volumes/), 
-[4](http://container42.com/2014/11/18/data-only-container-madness/).
+should read more about "data only container pattern" and docker volumes from this links [1](https://docs.docker.com/userguide/dockervolumes/), [2](https://groups.google.com/forum/#!msg/docker-user/EUndR1W5EBo/4hmJau8WyjAJ), [3](http://container42.com/2014/11/03/docker-indepth-volumes/), [4](http://container42.com/2014/11/18/data-only-container-madness/), you may also want to use docker links [5](http://learning-continuous-deployment.github.io/docker/images/dockerfile/database/persistence/volumes/linking/container/2015/05/29/docker-and-databases/).
 
 If you are planing to run it on production you should also change configuration of Informix Database - now it is almost default. 
 For more informations please refer to [Informix Innovator-C - quick start guide](http://www.informix-dba.com/p/informix-innovator-c-quick-start-guide.html).
@@ -290,7 +284,7 @@ What is missing in this repository
 ------------------------------------------
 
  * Perl, PHP, Python bindings
- * Various tools from IIDUG (alternatives for default IBM tools)
+ * Various tools from [IIDUG Software Repository](http://www.iiug.org/software/) (alternatives for default IBM tools)
 
 
 Informix tools which may be usefull but are not installed by default
