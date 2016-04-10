@@ -285,6 +285,8 @@ What is missing in this repository
 
  * Perl, PHP, Python bindings
  * Various tools from [IIDUG Software Repository](http://www.iiug.org/software/) (alternatives for default IBM tools)
+ * Handling signals in Docker way (https://medium.com/@gchudnov/trapping-signals-in-docker-containers-7a57fdda7d86#.gc1j6ip0a)
+ * Configure Informix to be more robust: http://www.cise.ufl.edu/~gv1/techstuff/informix1.txt
 
 
 Informix tools which may be usefull but are not installed by default
