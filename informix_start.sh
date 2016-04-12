@@ -27,15 +27,15 @@ source "${INFORMIX_HOME}/ifx_dev.env"
 
 if [ ! -e "${INFORMIX_DATA_DIR}/.initialized" ] ; then
 	echo ">>>    Create data directory structure in ${INFORMIX_DATA_DIR} (ifx initialization)"
-	mkdir -p "${INFORMIX_DATA_DIR}"/logs
-	mkdir -p "${INFORMIX_DATA_DIR}"/backup/datas
-	mkdir -p "${INFORMIX_DATA_DIR}"/backup/logs
-	mkdir -p "${INFORMIX_DATA_DIR}"/spaces/dbs_root/
-	touch "${INFORMIX_DATA_DIR}"/spaces/dbs_root/dbs_root.000
+	sudo mkdir -p "${INFORMIX_DATA_DIR}"/logs
+	sudo mkdir -p "${INFORMIX_DATA_DIR}"/backup/datas
+	sudo mkdir -p "${INFORMIX_DATA_DIR}"/backup/logs
+	sudo mkdir -p "${INFORMIX_DATA_DIR}"/spaces/dbs_root/
+	sudo touch "${INFORMIX_DATA_DIR}"/spaces/dbs_root/dbs_root.000
 
-	chown -R informix: "${INFORMIX_DATA_DIR}"/{logs,backup,spaces}
-	chmod 660 "${INFORMIX_DATA_DIR}"/spaces/dbs_root/dbs_root.000
-	chmod -R 777 "${INFORMIX_DATA_DIR}"/backup
+	sudo chown -R informix: "${INFORMIX_DATA_DIR}" "${INFORMIX_DATA_DIR}"/{logs,backup,spaces}
+	sudo chmod 660 "${INFORMIX_DATA_DIR}"/spaces/dbs_root/dbs_root.000
+	sudo chmod -R 777 "${INFORMIX_DATA_DIR}"/backup
 
 	# Initialize shared memmory and data structure
 	# and kill server
